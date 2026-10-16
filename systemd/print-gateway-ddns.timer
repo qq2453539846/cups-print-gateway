@@ -1,0 +1,11 @@
+[Unit]
+Description=每 60 秒同步一次 DNS 解析
+
+[Timer]
+OnBootSec=30
+OnUnitActiveSec=60
+AccuracySec=5s
+Unit=print-gateway-ddns.service
+
+[Install]
+WantedBy=timers.target

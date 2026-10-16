@@ -1,0 +1,41 @@
+{
+  "gateway": "http://127.0.0.1:8080",
+  "token": "",
+  "imap": {
+    "host": "imap.163.com", "port": 993, "ssl": true,
+    "user": "your-mailbox@example.com", "password": "CHANGE_ME_IMAP_AUTH_CODE"
+  },
+  "imap_timeout": 60,
+  "mailbox": "INBOX",
+  "whitelist": ["invoice@example.com"],
+  "subject_keywords": [],
+  "max_bytes": 15728640,
+  "download_links": true,
+  "poll_seconds": 60,
+  "once": false,
+  "print_only_new": true,
+  "default_preset": "a5",
+  "presets": {
+    "a5": {"paper": "A5", "scale_mode": "fit", "collate": true,
+           "duplex": "one-sided", "grayscale": false, "per_sheet": 1},
+    "a4": {"paper": "A4", "scale_mode": "fit", "collate": true,
+           "duplex": "two-sided-long-edge", "grayscale": false, "per_sheet": 1}
+  },
+  "classify": [
+    {"preset": "a5", "filenames": ["dzfp"], "text": ["德邦"]},
+    {"preset": "a4", "filenames": ["运单明细", "waybill"],
+     "text": ["运单明细", "运费明细", "运输明细"]},
+    {"preset": "a5", "filenames": ["顺丰", "电子发票", "invoice"],
+     "text": ["电子发票", "发票号码", "税号"],
+     "detail_text": ["运单明细", "运费明细", "运输明细", "明细清单", "货物明细"],
+     "detail_preset": "a4"}
+  ],
+  "gate_keywords": ["发票", "税号", "金额", "invoice", "waybill", "明细", "顺丰"],
+  "pdftotext": "pdftotext",
+  "printer": "",
+  "state_file": "/var/spool/print-gateway/invoice_mailer_seen.json",
+  "fail_dir": "/var/spool/print-gateway/invoice_fail",
+  "log_file": "invoice_mailer_log.jsonl",
+  "log_keep": 1000,
+  "dry_run": false
+}

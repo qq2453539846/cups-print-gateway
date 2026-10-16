@@ -1,0 +1,16 @@
+[Unit]
+Description=Print Gateway DDNS 同步（把 print.example.com 对齐到当前公网 IP）
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# 防御性护栏：DDNS 调用外部 API，若某次卡死无视 socket 超时，
+# 此上限让 systemd 强杀该运行，避免占满单核。正常 2s 跑完不受影响。
+TimeoutStartSec=120
+WorkingDirectory=/opt/print-gateway
+ExecStart=/usr/bin/python3 /opt/print-gateway/pg_ddns.py --mode ddns --quiet
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/etc/print-gateway /var/lib/print-gateway

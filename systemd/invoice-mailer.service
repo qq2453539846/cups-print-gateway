@@ -1,0 +1,17 @@
+[Unit]
+Description=Invoice Mailer - 邮件收件自动打印发票
+After=network-online.target print-gateway.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/print-gateway
+ExecStart=/usr/bin/python3 /opt/print-gateway/invoice_mailer.py --config /etc/print-gateway/invoice_mailer.json
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=invoice-mailer
+
+[Install]
+WantedBy=multi-user.target

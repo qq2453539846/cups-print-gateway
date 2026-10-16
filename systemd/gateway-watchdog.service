@@ -1,0 +1,20 @@
+[Unit]
+Description=Print Gateway Watchdog - 检测卡死并自动恢复
+After=network-online.target cups.service print-gateway.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/print-gateway
+ExecStart=/usr/bin/python3 /opt/print-gateway/gateway_watchdog.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gateway-watchdog
+# 看门狗自身也设上限，且与网关解耦：网关故障不能拖垮看门狗
+MemoryMax=64M
+
+[Install]
+WantedBy=multi-user.target

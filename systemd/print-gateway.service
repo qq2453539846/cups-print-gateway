@@ -1,0 +1,28 @@
+[Unit]
+Description=Print Gateway - 扫码上传打印服务
+After=network-online.target cups.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/print-gateway
+# EnvironmentFile 提供 ADMIN_TOKEN（/admin 后台口令），见同目录 gateway.env.example
+EnvironmentFile=-/etc/print-gateway/gateway.env
+# 常用参数：--port 端口 / --bind 监听地址 / --spool 作业目录 / --max-mb 单文件上限
+#           --admin-token 后台口令（也可由上面的 EnvironmentFile 提供）
+#           --host-display 页面上展示的主机地址（改成你的打印机服务器 IP/域名）
+ExecStart=/usr/bin/python3 /opt/print-gateway/print_gateway.py --port 8080 --bind 0.0.0.0 --spool /var/spool/print-gateway --title '扫码打印' --max-mb 32 --admin-token ${ADMIN_TOKEN} --host-display 192.168.1.100
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=print-gateway
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/spool/print-gateway /tmp
+
+[Install]
+WantedBy=multi-user.target
