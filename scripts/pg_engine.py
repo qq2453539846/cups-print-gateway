@@ -46,6 +46,8 @@ PDFINFO = "pdfinfo"
 PDFSEPARATE = "pdfseparate"
 PDFUNITE = "pdfunite"
 PDFTOPPM = "pdftoppm"
+PDFTOCAIRO = "pdftocairo"
+PDFFONTS = "pdffonts"
 LP = "lp"
 LPSTAT = "lpstat"
 
@@ -430,6 +432,44 @@ def gs_normalize(src: str, out: str, *, target: tuple[float, float] | None,
     return out
 
 
+def has_nonembedded_font(src: str) -> bool:
+    """pdffonts 检查是否存在未内嵌字体（emb 列 = no）。
+
+    未内嵌的 CID 中文字体（如德邦运单明细的 STSong-Light-UniGB-UCS2-H）会走
+    gs 的 CID 替换：映射缺失时输出乱码，映射指向大字体时 pdfwrite/渲染都
+    可能死循环（2026-10-17 德邦发票实测，gs 10.00.0）。
+    注意 emb 列要从右往左数（第 5 列）：type 列本身带空格（CID Type 0）。
+    """
+    try:
+        rc, txt = run([PDFFONTS, src], timeout=60)
+    except Exception:
+        return False                      # 检测失败不阻塞，走原管线
+    for line in txt.splitlines()[2:]:
+        cols = line.split()
+        if len(cols) >= 5 and cols[-5] == "no":
+            return True
+    return False
+
+
+def preembed_fonts(src: str, workdir: str) -> str:
+    """源 PDF 含未内嵌字体时，先用 pdftocairo 重嵌再交回 gs 管线。
+
+    poppler 走 fontconfig 替换（设备装有 Noto CJK，替换正常）并把字体
+    **内嵌**进输出，几秒完成；之后的 gs pdfwrite 不再做 CID 替换。
+    任何失败都原样返回，不阻塞正常打印。
+    """
+    if not has_nonembedded_font(src):
+        return src
+    fixed = os.path.join(workdir, "preembed.pdf")
+    try:
+        rc, txt = run([PDFTOCAIRO, "-pdf", src, fixed], timeout=120)
+    except Exception:
+        return src
+    if rc != 0 or not os.path.exists(fixed) or os.path.getsize(fixed) == 0:
+        return src
+    return fixed
+
+
 # ------------------------------------------------------------------ 3. 拼版
 def render_source_pages(src: str, jobs: list[dict], workdir: str,
                         grayscale: bool, decor=None, target_dpi: int = DEFAULT_DPI,
@@ -713,7 +753,8 @@ def build_final(spec: PrintSpec, src_pdf: str, workdir: str,
                   if spec.scale_mode == "fit" else None)
     sheet_note = "纸面 %g×%g 点" % (probe["sheet_w"], probe["sheet_h"])
 
-    # ---- 归一化
+    # ---- 归一化（含未内嵌字体的 PDF 先经 pdftocairo 重嵌，见 preembed_fonts）
+    cur = preembed_fonts(cur, workdir)
     norm = os.path.join(workdir, "normalized.pdf")
     gs_normalize(cur, norm, target=target, fit=(spec.scale_mode == "fit"),
                  grayscale=spec.grayscale,

@@ -139,6 +139,7 @@ python3 -m unittest test_pg_engine test_print_gateway test_pg_admin \
 
 - 部分 Kyocera 等厂商 PPD 写死 `*DefaultInputSlot` 且无 `Auto`，A5 作业不会进 A5 纸盒 → 跑 `fix_a5_tray.py`（补 PPD Auto 定义 + `lpadmin -o InputSlot=Auto`，可选 SNMP 纸盒核实）
 - 低内存板子（<1GB）建议保留 watchdog + systemd `MemoryMax` 护栏，并给 DDNS oneshot 单元加 `TimeoutStartSec`
+- **未内嵌中文字体的 PDF 打出来乱码**：发票类 PDF（如德邦运单明细用 `STSong-Light`）不带内嵌字体，gs 的 CID 替换要么映射缺失出乱码、要么死循环。引擎已内置防护：检测到未内嵌字体先走 `pdftocairo -pdf` 重嵌（poppler 经 fontconfig 替换）再进 gs。前提是系统装有任一中文字体（`fonts-noto-cjk` 或 `fonts-wqy-microhei` 均可）；另建议修复 Debian gs 的 cidfmap 指向（`/etc/ghostscript/cidfmap.d/` 默认指向未安装的 arphic 字体，`update-gsfontmap` 重新生成）
 
 ## License
 
